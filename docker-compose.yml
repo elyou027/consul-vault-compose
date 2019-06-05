@@ -1,0 +1,48 @@
+version: '2.1'
+
+networks:
+  local-net:
+
+services:
+  consul-server:
+    image: antonmatyunin/consul
+    container_name: consul-server
+    hostname: consul.${INT_DOMAIN}
+    environment:
+      CONSUL_BIND: "-bind $HOST_IP"
+      USER_ID: 1002
+      USER_GID: 1002
+      BOOTSTRAP_NUM: ${BOOTSTRAP_NUM}
+      INT_DOMAIN: ${INT_DOMAIN}
+    network_mode: "host"
+    volumes:
+#      - ./certs/ca.crt:/usr/local/share/ca-certificates/ca.crt
+      - ./consul/data:/consul/data
+      - ./consul/backup:/consul/backup
+      - ./consul/config:/consul/config
+    command: run_consul
+    logging:
+      options:
+        max-size: "50k"
+        max-file: "10"
+
+  vault-server:
+    image: antonmatyunin/vault
+    container_name: vault-server
+    hostname: vault.${INT_DOMAIN}
+    restart: always
+    network_mode: "host"
+    volumes:
+      - ./vault/backup:/vault/backup
+      - ./vault/config:/vault/config
+    environment:
+      USER_ID: 1000
+      USER_GID: 1000
+    ports:
+      - "8200:8200"
+    cap_add:
+      - IPC_LOCK
+    logging:
+      options:
+        max-size: "50k"
+        max-file: "10"
